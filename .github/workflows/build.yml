@@ -1,0 +1,34 @@
+name: Build Ilot14
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkita64:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install libraries
+        run: |
+          # pkg.devkitpro.org sometimes answers 403 for a while, so try again a few times
+          for i in 1 2 3 4 5 6 7 8; do
+            if dkp-pacman -Sy --noconfirm && dkp-pacman -S --noconfirm --needed switch-sdl2 switch-sdl2_ttf switch-freetype switch-zlib; then
+              exit 0
+            fi
+            echo "devkitPro servers said no (try $i), waiting..."
+            sleep $((i * 20))
+          done
+          exit 1
+
+      - name: Build
+        run: make -j2
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ilot14
+          path: Ilot14.nro
